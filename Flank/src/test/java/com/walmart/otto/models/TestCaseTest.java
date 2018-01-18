@@ -1,4 +1,4 @@
-package com.walmart.otto.aggregator;
+package com.walmart.otto.models;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -9,7 +9,7 @@ public class TestCaseTest {
 
   @Test
   public void shouldGenerateIdWithClassNameAndTestname() throws Exception {
-    String testId = TestCase.generateTestId("testName", "com.foo.Bar");
-    assertThat(testId, equalTo("Bar_testName"));
+    String testId = TestCase.generateCanonicalName("testName", "com.foo.Bar");
+    assertThat(testId, equalTo("com_foo_Bar_testName"));
   }
 }

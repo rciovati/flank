@@ -102,15 +102,7 @@ public class GsutilTool extends Tool {
   }
 
   public File[] fetchResults() throws IOException, InterruptedException {
-    File currentDir = new File("");
-    File resultsDir =
-        new File(currentDir.getAbsolutePath() + File.separator + Constants.RESULTS_DIR);
-
-    boolean createdFolder = resultsDir.mkdirs();
-
-    if (createdFolder) {
-      System.out.println("Created folder: " + resultsDir.getAbsolutePath() + "\n");
-    }
+    File resultsDir = createReportsDirIfNeeded();
 
     System.out.println("Fetching results to: " + resultsDir.getAbsolutePath());
 
@@ -121,11 +113,55 @@ public class GsutilTool extends Tool {
     return resultsDir.listFiles();
   }
 
+  public File fetchShardResult(String shardName) throws IOException, InterruptedException {
+    File resultsDir = createReportsDirIfNeeded();
+
+    System.out.println("Fetching results to: " + resultsDir.getAbsolutePath());
+
+    File shardResultDir = new File(resultsDir, shardName);
+
+    boolean created = shardResultDir.mkdirs();
+    if (created) {
+      System.out.println("Created folder: " + shardResultDir.getAbsolutePath() + "\n");
+    }
+
+    String[] fetchFiles = fetchXmlReportForShard(shardResultDir, shardName);
+
+    executeCommand(fetchFiles, new ArrayList<>());
+
+    return new File(resultsDir, shardName);
+  }
+
+  private File createReportsDirIfNeeded() {
+    File currentDir = new File("");
+    File resultsDir =
+        new File(currentDir.getAbsolutePath() + File.separator + Constants.RESULTS_DIR);
+
+    boolean createdFolder = resultsDir.mkdirs();
+
+    if (createdFolder) {
+      System.out.println("Created folder: " + resultsDir.getAbsolutePath() + "\n");
+    }
+
+    return resultsDir;
+  }
+
   public Optional<File> fetchBucket() throws IOException, InterruptedException {
     if (!getConfigurator().isFetchBucket()) {
       return Optional.empty();
     }
 
+    File resultsDir = resultsBaseDir();
+
+    System.out.println("\nFetching bucket to: " + resultsDir.getAbsolutePath());
+
+    String[] fetchBucket = fetchBucket(resultsDir);
+    executeCommand(fetchBucket, new ArrayList<>());
+
+    return Optional.of(currentExecutionResultsDir());
+  }
+
+  public File resultsBaseDir() {
     File currentDir = new File("");
     File resultsDir = new File(currentDir.getAbsolutePath() + File.separator + "bucket");
 
@@ -135,13 +171,11 @@ public class GsutilTool extends Tool {
       System.out.println("Created folder: " + resultsDir.getAbsolutePath());
     }
 
-    System.out.println("\nFetching bucket to: " + resultsDir.getAbsolutePath());
+    return resultsDir;
+  }
 
-    String[] fetchBucket = fetchBucket(resultsDir);
-
-    executeCommand(fetchBucket, new ArrayList<>());
-
-    return Optional.of(new File(resultsDir, bucket.split("/")[3]));
+  public File currentExecutionResultsDir() {
+    return new File(resultsBaseDir(), bucket.split("/")[3]);
   }
 
   public boolean findGSFile(String fileName) throws IOException, InterruptedException {
@@ -212,10 +246,33 @@ public class GsutilTool extends Tool {
     return fetchFiles;
   }
 
+  private String[] fetchXmlReportForShard(File reportsDir, String shardName) {
+    String[] fetchFiles =
+        new String[] {
+          getConfigurator().getGsutil(),
+          "--quiet",
+          "-m",
+          "rsync",
+          "-r",
+          "-x",
+          "^((?!test_result_\\d+\\.xml).)*$",
+          bucket + shardName,
+          reportsDir.getAbsolutePath()
+        };
+    return fetchFiles;
+  }
+
   private String[] fetchBucket(File file) {
     String[] fetchFiles =
         new String[] {
-          getConfigurator().getGsutil(), "-m", "cp", "-r", "-U", bucket, file.getAbsolutePath()
+          getConfigurator().getGsutil(),
+          "--quiet",
+          "-m",
+          "cp",
+          "-r",
+          "-U",
+          bucket,
+          file.getAbsolutePath()
         };
     return fetchFiles;
   }

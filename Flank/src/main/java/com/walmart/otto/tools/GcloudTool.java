@@ -23,8 +23,14 @@ public class GcloudTool extends Tool {
     super(ToolManager.GCLOUD_TOOL, config);
   }
 
-  public void runGcloud(String testCase, String bucket, int shardIndex)
-      throws RuntimeException, IOException, InterruptedException {
+  public ExecutionResult runGcloud(String testCase, String bucket, String shardName)
+      throws IOException, InterruptedException {
+    return runGcloud(testCase, bucket, shardName, getConfigurator().getDevices());
+  }
+
+  public ExecutionResult runGcloud(
+      String testCase, String bucket, String shardName, List<Device> devices)
+      throws IOException, InterruptedException {
     // don't quote arguments or ProcessBuilder will error in strange ways.
     String[] runGcloud =
         new String[] {
@@ -49,13 +55,13 @@ public class GcloudTool extends Tool {
           "--timeout",
           getConfigurator().getShardTimeout() + "m",
           "--results-dir",
-          bucket.split("/")[3] + "/" + shardIndex,
+          bucket.split("/")[3] + "/" + shardName,
           "--test-targets",
           testCase
         };
 
     List<String> gcloudList = new ArrayList<>(Arrays.asList(runGcloud));
-    for (Device device : getConfigurator().getDevices()) {
+    for (Device device : devices) {
       gcloudList.add("--device");
       gcloudList.add(device.toString());
     }
@@ -74,7 +80,7 @@ public class GcloudTool extends Tool {
 
     String[] cmdArray = gcloudList.toArray(new String[0]);
 
-    executeGcloud(cmdArray, testCase);
+    return executeGcloud(cmdArray, testCase, shardName);
   }
 
   private String orchestratorFlag() {
@@ -123,7 +129,7 @@ public class GcloudTool extends Tool {
     return testFailed;
   }
 
-  public void executeGcloud(String[] commands, String test)
+  private ExecutionResult executeGcloud(String[] commands, String test, String shardName)
       throws RuntimeException, IOException, InterruptedException {
     List<String> inputStreamList = new ArrayList<>();
     List<String> errorStreamList = new ArrayList<>();
@@ -151,14 +157,23 @@ public class GcloudTool extends Tool {
       }
       if (printTests) {
         printTests(test);
+        printTests = false;
       }
 
       System.out.println(line);
     }
+
+    printTests = true;
+
     if (resultsLink != null) {
       System.out.println("\n" + resultsLink + "\n");
     }
-    printTests = true;
+
+    if (testFailed) {
+      return ExecutionResult.failure(shardName);
+    } else {
+      return ExecutionResult.success(shardName);
+    }
   }
 
   public String getProjectName() throws IOException, InterruptedException {
@@ -188,6 +203,32 @@ public class GcloudTool extends Tool {
     }
 
     System.out.println("Test(s):" + test);
-    printTests = false;
+  }
+
+  public static class ExecutionResult {
+
+    private final boolean isFailure;
+    private final String shardName;
+
+    private ExecutionResult(boolean isFailure, String shardName) {
+      this.isFailure = isFailure;
+      this.shardName = shardName;
+    }
+
+    public static ExecutionResult success(String shardIndex) {
+      return new ExecutionResult(false, shardIndex);
+    }
+
+    public static ExecutionResult failure(String shardIndex) {
+      return new ExecutionResult(true, shardIndex);
+    }
+
+    public boolean isFailure() {
+      return isFailure;
+    }
+
+    public String getShardName() {
+      return shardName;
+    }
   }
 }

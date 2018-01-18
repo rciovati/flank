@@ -1,22 +1,22 @@
 package com.walmart.otto.aggregator;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 import com.walmart.otto.configurator.Configurator;
+import com.walmart.otto.models.TestCase;
+import com.walmart.otto.models.TestSuite;
+import com.walmart.otto.shards.TestSuites;
 import com.walmart.otto.tools.GsutilTool;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.walmart.otto.utils.FileUtils;
+import com.walmart.otto.utils.JUnitReportParser;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Stream;
 
 public class ReportsAggregator {
 
-  private final JunitReport junitReport = new JunitReport();
   private final HtmlReport htmlReport;
   private final ArtifactsProcessor artifactsProcessor;
   private final GsutilTool gsutilTool;
@@ -36,7 +36,7 @@ public class ReportsAggregator {
 
     System.out.println("Generating combined reports starting from: " + reportsBaseDir.toString());
 
-    List<TestSuite> testSuites = readTestSuites(reportsBaseDir);
+    List<TestSuite> testSuites = JUnitReportParser.parseReportsInFolder(reportsBaseDir);
 
     Map<String, List<TestSuite>> map =
         testSuites.stream().collect(groupingBy(TestSuite::getMatrixName));
@@ -46,30 +46,33 @@ public class ReportsAggregator {
       String matrixName = entry.getKey();
       List<TestSuite> suites = entry.getValue();
 
+      TestSuite summaryTestSuite = TestSuites.createSummary(matrixName, suites);
+
       if (configurator.isGenerateAggregatedXmlReport()) {
         Path xmlOutputFile = reportsBaseDir.resolve(matrixName + "_results.xml");
 
-        junitReport.generate(xmlOutputFile, suites);
+        JunitReportWriter.generate(xmlOutputFile, summaryTestSuite);
         gsutilTool.uploadAggregatedXmlFiles(reportsBaseDir.toFile());
 
-        System.out.println("XML report uploaded to: " + baseUrl + "/" + getFileName(xmlOutputFile));
+        System.out.println(
+            "XML report uploaded to: " + baseUrl + "/" + FileUtils.getFileName(xmlOutputFile));
       }
 
       if (configurator.isGenerateAggregatedHtmlReport()) {
         Path htmlOutputFile = reportsBaseDir.resolve(matrixName + "_results.html");
 
-        suites
+        summaryTestSuite
+            .getTestCaseList()
             .stream()
-            .flatMap(testSuite -> testSuite.getTestCaseList().stream())
             .filter(TestCase::isFailure)
             .parallel()
             .forEach(testCase -> processArtifacts(reportsBaseDir, matrixName, testCase));
 
-        htmlReport.generate(baseUrl, htmlOutputFile, suites);
+        htmlReport.generate(baseUrl, htmlOutputFile, summaryTestSuite);
         gsutilTool.uploadAggregatedHtmlReports(reportsBaseDir.toFile());
 
         System.out.println(
-            "HTML report uploaded to: " + baseUrl + "/" + getFileName(htmlOutputFile));
+            "HTML report uploaded to: " + baseUrl + "/" + FileUtils.getFileName(htmlOutputFile));
       }
     }
   }
@@ -78,13 +81,7 @@ public class ReportsAggregator {
     return "https://storage.cloud.google.com/"
         + configurator.getProjectName()
         + "/"
-        + getFileName(reportBaseDir);
-  }
-
-  //we know we are going to call this for existing files
-  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-  private static String getFileName(Path htmlOutputFile) {
-    return htmlOutputFile.getFileName().toString();
+        + FileUtils.getFileName(reportBaseDir);
   }
 
   private void processArtifacts(Path reportBaseDir, String matrixName, TestCase testCase) {
@@ -94,17 +91,5 @@ public class ReportsAggregator {
       System.out.println("Can't process test artifacts for: " + testCase.getTestName());
       throw new RuntimeException(e);
     }
-  }
-
-  private List<TestSuite> readTestSuites(Path reportsBaseDir) throws IOException {
-    return findReportFiles(reportsBaseDir).map(junitReport::readTestSuite).collect(toList());
-  }
-
-  static Stream<Path> findReportFiles(Path reportsBaseDir) throws IOException {
-    return Files.find(reportsBaseDir, 3, (path, basicFileAttributes) -> isTestReport(path));
-  }
-
-  static boolean isTestReport(Path path) {
-    return getFileName(path).startsWith("test_result_");
   }
 }

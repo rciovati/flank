@@ -1,10 +1,10 @@
-package com.walmart.otto.aggregator;
+package com.walmart.otto.utils;
 
 import java.time.Duration;
 
-class TimeUtils {
+public class TimeUtils {
 
-  static String formatDuration(Duration duration) {
+  public static String formatDuration(Duration duration) {
     long seconds = duration.getSeconds();
     if (seconds < 0) {
       throw new IllegalArgumentException("invalid negative duration");

@@ -8,6 +8,10 @@ import static java.util.stream.Collectors.toList;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import com.walmart.otto.configurator.Configurator;
+import com.walmart.otto.models.TestCase;
+import com.walmart.otto.models.TestClass;
+import com.walmart.otto.models.TestSuite;
+import com.walmart.otto.utils.TimeUtils;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,16 +33,16 @@ class HtmlReport {
     this.configurator = configurator;
   }
 
-  public void generate(String baseUrl, Path outputFile, List<TestSuite> testSuites)
+  public void generate(String baseUrl, Path outputFile, TestSuite testSuite)
       throws HtmlReportGenerationException {
 
-    long testsCount = testSuites.stream().mapToInt(TestSuite::getTestsCount).sum();
-    long failuresCount = testSuites.stream().mapToInt(TestSuite::getFailuresCount).sum();
+    long testsCount = testSuite.getTestsCount();
+    long failuresCount = testSuite.getFailuresCount();
 
     List<TestClass> testClasses =
-        testSuites
+        testSuite
+            .getTestCaseList()
             .stream()
-            .flatMap(testSuite -> testSuite.getTestCaseList().stream())
             .collect(groupingBy(TestCase::getClassName))
             .values()
             .stream()
@@ -46,16 +50,11 @@ class HtmlReport {
             .sorted(comparingLong(TestClass::getFailingTestsCount).reversed())
             .collect(toList());
 
-    int durationSeconds = testSuites.stream().mapToInt(s -> (int) s.getDurantion()).sum();
+    int durationSeconds = (int) testSuite.getDurantion();
     Duration duration = Duration.ofSeconds(durationSeconds);
 
     long shardsCount =
-        testSuites
-            .stream()
-            .flatMap(testSuite -> testSuite.getTestCaseList().stream())
-            .map(TestCase::getShardName)
-            .distinct()
-            .count();
+        testSuite.getTestCaseList().stream().map(TestCase::getShardName).distinct().count();
 
     HashMap<Object, Object> parameters = new HashMap<>();
     parameters.put("testsCount", testsCount);

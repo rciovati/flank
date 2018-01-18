@@ -1,4 +1,4 @@
-package com.walmart.otto.aggregator;
+package com.walmart.otto.utils;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;

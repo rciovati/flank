@@ -1,12 +1,13 @@
-package com.walmart.otto.aggregator;
+package com.walmart.otto.models;
 
-class TestCase {
+public class TestCase {
 
   private final String shardName;
   private final String testName;
   private final String className;
   private final String exceptionMessage;
   private final Result result;
+  private final String canonicalName;
   private final String id;
 
   private TestCase(
@@ -16,34 +17,42 @@ class TestCase {
     this.testName = testName;
     this.className = className;
     this.exceptionMessage = exceptionMessage;
-    this.id = generateTestId(testName, className);
+    this.canonicalName = generateCanonicalName(testName, className);
+    this.id = generateId(shardName, canonicalName);
   }
 
-  static String generateTestId(String testName, String className) {
-    final String[] tokens = className.split("\\.");
-    return tokens[tokens.length - 1] + "_" + testName;
+  static String generateId(String shardName, String canonicalName) {
+    return shardName + "_ " + canonicalName;
   }
 
-  static TestCase success(String shardName, String testName, String className) {
+  static String generateCanonicalName(String testName, String className) {
+    return className.replaceAll("\\.", "_") + "_" + testName;
+  }
+
+  public static TestCase success(String shardName, String testName, String className) {
     return new TestCase(Result.SUCCESS, shardName, testName, className, null);
   }
 
-  static TestCase failure(
+  public static TestCase failure(
       String shardName, String testName, String className, String exceptionMessage) {
     return new TestCase(Result.FAILURE, shardName, testName, className, exceptionMessage);
   }
 
-  static TestCase error(
+  public static TestCase error(
       String shardName, String testName, String className, String exceptionMessage) {
     return new TestCase(Result.ERROR, shardName, testName, className, exceptionMessage);
   }
 
-  static TestCase skipped(String shardName, String testName, String className) {
+  public static TestCase skipped(String shardName, String testName, String className) {
     return new TestCase(Result.SKIPPED, shardName, testName, className, null);
   }
 
   public boolean isFailure() {
     return result == Result.FAILURE;
+  }
+
+  public boolean isSuccess() {
+    return result == Result.SUCCESS;
   }
 
   public String getTestName() {
@@ -64,6 +73,10 @@ class TestCase {
 
   public Result getResult() {
     return result;
+  }
+
+  public String getCanonicalName() {
+    return canonicalName;
   }
 
   public String getId() {

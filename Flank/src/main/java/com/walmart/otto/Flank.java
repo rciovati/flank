@@ -15,14 +15,18 @@ import com.walmart.otto.configurator.Configurator;
 import com.walmart.otto.filter.TestFilter;
 import com.walmart.otto.filter.TestFilters;
 import com.walmart.otto.models.Device;
+import com.walmart.otto.models.TestSuite;
 import com.walmart.otto.reporter.PriceReporter;
 import com.walmart.otto.reporter.TimeReporter;
 import com.walmart.otto.shards.ShardExecutor;
+import com.walmart.otto.shards.TestSuites;
 import com.walmart.otto.tools.GcloudTool;
 import com.walmart.otto.tools.GsutilTool;
 import com.walmart.otto.tools.ProcessExecutor;
 import com.walmart.otto.tools.ToolManager;
 import com.walmart.otto.utils.FileUtils;
+import com.walmart.otto.utils.JUnitReportParser;
+import com.walmart.otto.utils.XMLUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -76,8 +80,12 @@ public class Flank {
 
     downloadTestTimeFile(gsutilTool, configurator.getShardDuration());
 
-    new ShardExecutor(configurator, toolManager)
-        .execute(testCases, gsutilTool.uploadAPKsToBucket());
+    String bucket = gsutilTool.uploadAPKsToBucket();
+    new ShardExecutor(configurator, toolManager, bucket).execute(testCases);
+
+    if (configurator.isFetchXMLFiles()) {
+      fetchResults(gsutilTool);
+    }
 
     gsutilTool.deleteAPKs();
 
@@ -91,6 +99,10 @@ public class Flank {
     printEstimates();
 
     printExecutionTimes(startTime);
+  }
+
+  private void fetchResults(GsutilTool gsutilTool) throws IOException, InterruptedException {
+    XMLUtils.updateXMLFilesWithDeviceName(gsutilTool.fetchResults());
   }
 
   private void aggregateTestReports(File dir) {
@@ -116,7 +128,7 @@ public class Flank {
 
     try {
       flank.start(options);
-      if (flank.hasTestFailed()) {
+      if (!flank.isBuildSuccess()) {
         System.exit(-1);
       }
     } catch (RuntimeException | IOException | InterruptedException | ExecutionException e) {
@@ -165,8 +177,18 @@ public class Flank {
     System.exit(-1);
   }
 
-  private boolean hasTestFailed() {
-    return toolManager.get(GcloudTool.class).hasTestFailed();
+  private boolean isBuildSuccess() {
+    File file = gsutilTool.currentExecutionResultsDir();
+    return isBuildSuccess(file);
+  }
+
+  private boolean isBuildSuccess(File reportsDir) {
+    try {
+      List<TestSuite> testSuites = JUnitReportParser.parseReportsInFolder(reportsDir.toPath());
+      return TestSuites.isGloballySuccessful(testSuites);
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to determine final build status", e);
+    }
   }
 
   private ToolManager.Config loadTools(String appAPK, String testAPK, Configurator configurator) {
@@ -259,7 +281,6 @@ public class Flank {
                   .stream()
                   .map(Device::getId)
                   .reduce((s, s2) -> s + ", " + s2));
-      return;
     }
   }
 

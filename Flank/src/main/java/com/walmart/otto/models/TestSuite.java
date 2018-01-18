@@ -1,4 +1,4 @@
-package com.walmart.otto.aggregator;
+package com.walmart.otto.models;
 
 import java.util.List;
 
@@ -55,5 +55,9 @@ public class TestSuite {
 
   public String getMatrixName() {
     return matrixName;
+  }
+
+  public boolean hasFailures() {
+    return failuresCount > 0 || errorsCount > 0;
   }
 }
