@@ -8,11 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 public class PriceReporter {
+
   private static double virtualDevicePricePerMin = 1.00;
   private static double realDevicePricePerMin = 5.00;
 
-  private static HashMap<String, Double> pricePerMinForDevice = new HashMap<String, Double>();
-  private static HashMap<String, BigDecimal> estimates = new HashMap<String, BigDecimal>();
+  private static HashMap<String, Double> pricePerMinForDevice = new HashMap<>();
+  private static HashMap<String, BigDecimal> estimates = new HashMap<>();
 
   public static HashMap<String, BigDecimal> getTotalPrice(List<Integer> times) {
 
@@ -48,18 +49,18 @@ public class PriceReporter {
     Integer billableTime = getBillableTime(totalTimeInSecs);
     BigDecimal pricePerMin =
         new BigDecimal(pricePerHour).divide(new BigDecimal(60), 10, RoundingMode.HALF_UP);
-    BigDecimal actualPrice = pricePerMin.multiply(new BigDecimal(billableTime));
 
-    return actualPrice; // this price is not rounded-up because we want to add all the prices and then round-up.
+    return pricePerMin.multiply(
+        new BigDecimal(
+            billableTime)); // this price is not rounded-up because we want to add all the prices and then round-up.
   }
 
-  public static Integer getBillableTime(Number totalTimeInSecs) {
+  private static Integer getBillableTime(Number totalTimeInSecs) {
     double time = totalTimeInSecs.doubleValue() / 60;
-    int roundedTime = (int) Math.ceil(time);
-    return roundedTime;
+    return (int) Math.ceil(time);
   }
 
-  private static HashMap getPricePerMinForDevice() {
+  private static HashMap<String, Double> getPricePerMinForDevice() {
     pricePerMinForDevice.put("virtual", virtualDevicePricePerMin);
     pricePerMinForDevice.put("physical", realDevicePricePerMin);
     return pricePerMinForDevice;

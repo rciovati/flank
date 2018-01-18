@@ -1,6 +1,8 @@
 package com.walmart.otto.aggregator;
 
 import com.walmart.otto.configurator.Configurator;
+import com.walmart.otto.models.TestCase;
+import com.walmart.otto.utils.TimeUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -115,7 +117,7 @@ class ArtifactsProcessor {
       Instant firstTestExecuted,
       Instant startOfTargetTest,
       Instant endOfTargetTest)
-      throws IOException, InterruptedException {
+      throws IOException {
 
     Path videoFile =
         reportBaseDir.resolve(

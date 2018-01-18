@@ -1,4 +1,4 @@
-package com.walmart.otto.aggregator;
+package com.walmart.otto.models;
 
 import java.util.List;
 

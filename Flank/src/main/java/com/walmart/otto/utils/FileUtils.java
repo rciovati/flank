@@ -1,9 +1,14 @@
 package com.walmart.otto.utils;
 
 import com.walmart.otto.Constants;
-import java.io.*;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 import java.util.regex.Pattern;
@@ -69,5 +74,10 @@ public class FileUtils {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+  public static String getFileName(Path htmlOutputFile) {
+    return htmlOutputFile.getFileName().toString();
   }
 }

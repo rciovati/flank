@@ -2,21 +2,33 @@ package com.walmart.otto.shards;
 
 import com.walmart.otto.Constants;
 import com.walmart.otto.configurator.Configurator;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.Stack;
 import java.util.regex.Pattern;
 
 public class ShardCreator {
+
   private Configurator configurator;
-  int extraTestsInShard = 0;
+  private int extraTestsInShard = 0;
 
   public ShardCreator(Configurator configurator) {
     this.configurator = configurator;
   }
 
-  public List getShards(List<String> testCases) {
-    Stack<String> stack = new Stack();
+  public List<String> getShards(List<String> testCases) {
+    Stack<String> stack = new Stack<>();
     stack.addAll(testCases);
 
     int numberOfShards = configurator.getNumShards();
@@ -60,7 +72,7 @@ public class ShardCreator {
     return stringBuilder.toString();
   }
 
-  public List getConfigurableShards(List<String> testCases) {
+  public List<String> getConfigurableShards(List<String> testCases) {
     if (configurator.getNumShards() != -1 || configurator.getShardDuration() == -1) {
       return new ArrayList<>();
     }
@@ -96,24 +108,23 @@ public class ShardCreator {
     return false;
   }
 
-  public StringBuilder createConfigurableShard(Map shardMap, List<String> testCases) {
+  public StringBuilder createConfigurableShard(
+      Map<String, String> shardMap, List<String> testCases) {
     StringBuilder stringBuilder = new StringBuilder();
 
     int shardLengthSec = configurator.getShardDuration();
 
-    Set entrySet = shardMap.entrySet();
-    Iterator it = entrySet.iterator();
+    Set<Entry<String, String>> entrySet = shardMap.entrySet();
+    Iterator<Entry<String, String>> it = entrySet.iterator();
 
     while (it.hasNext()) {
-      Map.Entry testCase = (Map.Entry) it.next();
+      Entry<String, String> testCase = it.next();
 
-      int testCaseTime =
-          Integer.parseInt(
-              (String) testCase.getValue()); //Integer.valueOf((String) testCase.getValue());
+      int testCaseTime = Integer.parseInt(testCase.getValue());
 
       if (shardLengthSec - testCaseTime > 0) {
         if (testCases.contains(testCase.getKey())) {
-          addStringToBuilder((String) testCase.getKey(), stringBuilder);
+          addStringToBuilder(testCase.getKey(), stringBuilder);
           shardLengthSec = shardLengthSec - testCaseTime;
         }
 
@@ -121,7 +132,7 @@ public class ShardCreator {
       } else if (shardLengthSec == configurator.getShardDuration()
           && testCaseTime >= configurator.getShardDuration()) {
         if (testCases.contains(testCase.getKey())) {
-          addStringToBuilder((String) testCase.getKey(), stringBuilder);
+          addStringToBuilder(testCase.getKey(), stringBuilder);
         }
         it.remove();
         return stringBuilder;
@@ -131,26 +142,28 @@ public class ShardCreator {
   }
 
   public Map<String, String> createShardMap() {
-    Map<String, String> shardMap = new HashMap<>();
-    try {
-      try (BufferedReader br =
-          new BufferedReader(
-              new InputStreamReader(
-                  new FileInputStream(Constants.TEST_TIME_FILE), StandardCharsets.UTF_8))) {
-        String line;
-        while ((line = br.readLine()) != null) {
-          String[] testCase = line.split(Pattern.quote(" "));
-          shardMap.put(testCase[0], testCase[1]);
-        }
+    Path testTimeFile = Paths.get(Constants.TEST_TIME_FILE);
+    try (BufferedReader br = Files.newBufferedReader(testTimeFile)) {
+      Map<String, String> shardMap = new HashMap<>();
+      String line;
+      while ((line = br.readLine()) != null) {
+        String[] testCase = line.split(Pattern.quote(" "));
+        shardMap.put(testCase[0], testCase[1]);
       }
-    } catch (IOException ignored) {
+      return shardMap;
+    } catch (IOException e) {
+      System.err.println("Unable to read flank.tests file: " + e.getMessage());
+      return Collections.emptyMap();
     }
-
-    return shardMap;
   }
 
   private void addStringToBuilder(String stringToAdd, StringBuilder stringBuilder) {
-    stringBuilder.append("class " + stringToAdd);
+    stringBuilder.append("class ");
+    stringBuilder.append(stringToAdd);
     stringBuilder.append(",");
+  }
+
+  public static String generateTestCaseName(String className, String testName) {
+    return "class " + className + "#" + testName;
   }
 }

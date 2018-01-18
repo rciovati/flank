@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<testsuite errors="0" failures="1" hostname="localhost" skipped="0" tests="2" time="246.00">
-  <testcase classname="ClassName" name="testSuccess"/>
+<testsuite errors="0" failures="1" hostname="localhost" skipped="0" tests="2" time="10.00">
   <testcase classname="ClassName" name="testFailure">
     <failure>stacktrace</failure>
   </testcase>
+  <testcase classname="ClassName" name="testSuccess"/>
 </testsuite>
