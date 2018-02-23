@@ -251,7 +251,6 @@ public class GsutilTool extends Tool {
         new String[] {
           getConfigurator().getGsutil(),
           "--quiet",
-          "-m",
           "rsync",
           "-r",
           "-x",
