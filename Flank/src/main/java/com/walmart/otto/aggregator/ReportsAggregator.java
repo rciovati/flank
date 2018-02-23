@@ -65,7 +65,6 @@ public class ReportsAggregator {
             .getTestCaseList()
             .stream()
             .filter(TestCase::isFailure)
-            .parallel()
             .forEach(testCase -> processArtifacts(reportsBaseDir, matrixName, testCase));
 
         htmlReport.generate(baseUrl, htmlOutputFile, summaryTestSuite);
@@ -87,7 +86,7 @@ public class ReportsAggregator {
   private void processArtifacts(Path reportBaseDir, String matrixName, TestCase testCase) {
     try {
       artifactsProcessor.generateArtifactsForTestCase(reportBaseDir, matrixName, testCase);
-    } catch (IOException | InterruptedException e) {
+    } catch (IOException e) {
       System.out.println("Can't process test artifacts for: " + testCase.getTestName());
       throw new RuntimeException(e);
     }
