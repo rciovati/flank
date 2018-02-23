@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class ShardExecutor {
 
@@ -83,6 +84,14 @@ public class ShardExecutor {
   }
 
   private CompletableFuture retryTestsIfNeeded(ExecutionResult executionResult) {
+
+    try {
+      System.out.println("Waiting 10 seconds before fetching test report for " + executionResult.getShardName());
+      Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+    } catch (InterruptedException e) {
+      System.out.println("Failed to wait 10 seconds before fetching test report for " + executionResult.getShardName());
+    }
+
     List<Retry> retries = failureAnalyzer.calculateTestToRetry(executionResult);
 
     if (retries.isEmpty()) {
