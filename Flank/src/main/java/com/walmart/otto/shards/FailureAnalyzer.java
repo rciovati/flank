@@ -7,7 +7,6 @@ import com.walmart.otto.tools.GcloudTool.ExecutionResult;
 import com.walmart.otto.tools.GsutilTool;
 import com.walmart.otto.utils.JUnitReportParser;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,8 +34,10 @@ public class FailureAnalyzer {
       shardReportsDir = gsutilTool.fetchShardResult(executionResult.getShardName());
       ensureTestReportFileExists(shardReportsDir);
       suites = JUnitReportParser.parseReportsInFolder(shardReportsDir.toPath());
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException("Error analyzing test report to compute retry", e);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Error analyzing test report to compute retry. Shard name: " + executionResult
+              .getShardName(), e);
     }
 
     List<TestSuite> testSuiteWithFailures =

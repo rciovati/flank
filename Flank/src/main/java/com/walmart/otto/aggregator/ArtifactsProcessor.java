@@ -46,7 +46,7 @@ class ArtifactsProcessor {
   }
 
   public void generateArtifactsForTestCase(Path reportBaseDir, String matrixName, TestCase testCase)
-      throws IOException, InterruptedException {
+      throws IOException {
 
     final Pattern targetTestStartedLine = createTestStartedPattern(testCase);
     final Pattern targetTestFinishedLine = createTestFinishedPattern(testCase);
