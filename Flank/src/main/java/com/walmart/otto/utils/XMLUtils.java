@@ -3,7 +3,9 @@ package com.walmart.otto.utils;
 import java.io.File;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
@@ -12,6 +14,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class XMLUtils {
+
   static String deviceName;
 
   public static void updateXMLFilesWithDeviceName(File[] files) {
@@ -56,15 +59,14 @@ public class XMLUtils {
     File xmlFile = new File(filename);
     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder dBuilder;
-    Document doc = null;
-
     try {
       dBuilder = dbFactory.newDocumentBuilder();
-      doc = dBuilder.parse(xmlFile);
+      Document doc = dBuilder.parse(xmlFile);
       doc.getDocumentElement().normalize();
-    } catch (Exception ignored) {
+      return doc;
+    } catch (Exception ex) {
+      throw new RuntimeException("Something went wrong reading " + filename, ex);
     }
-    return doc;
   }
 
   public static StringBuilder getText(Document doc) {
@@ -94,7 +96,7 @@ public class XMLUtils {
   private static void updateAttributeValue(
       Document doc, String deviceName, String elementTag, String element) {
     NodeList testcase = doc.getElementsByTagName(elementTag); //testcase
-    Element name = null;
+    Element name;
 
     for (int i = 0; i < testcase.getLength(); i++) {
       name = (Element) testcase.item(i);
