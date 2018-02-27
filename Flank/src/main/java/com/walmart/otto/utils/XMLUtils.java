@@ -34,10 +34,6 @@ public class XMLUtils {
     try {
       Document doc = getXMLFile(filename);
 
-      if (doc == null) {
-        return;
-      }
-
       //update attribute value
       updateAttributeValue(doc, deviceName, elementTag, element);
 
