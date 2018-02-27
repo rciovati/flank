@@ -36,8 +36,9 @@ public class FailureAnalyzer {
       suites = JUnitReportParser.parseReportsInFolder(shardReportsDir.toPath());
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error analyzing test report to compute retry. Shard name: " + executionResult
-              .getShardName(), e);
+          "Error analyzing test report to compute retry. Shard name: "
+              + executionResult.getShardName(),
+          e);
     }
 
     List<TestSuite> testSuiteWithFailures =
