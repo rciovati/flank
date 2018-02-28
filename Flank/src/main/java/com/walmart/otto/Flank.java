@@ -2,6 +2,7 @@ package com.walmart.otto;
 
 import static com.walmart.otto.OptionDescriptions.APP_APK_OPTION_DESCRIPTION;
 import static com.walmart.otto.OptionDescriptions.CONFIG_FILE_OPTION_DESCRIPTION;
+import static com.walmart.otto.OptionDescriptions.RESULT_URLS_FILE_DESCRIPTION;
 import static com.walmart.otto.OptionDescriptions.TEST_APK_OPTION_DESCRIPTION;
 import static com.walmart.otto.OptionDescriptions.TEST_FILTERS_DESCRIPTION;
 
@@ -58,6 +59,14 @@ public class Flank {
     String testApk = (String) options.valueOf("t");
     String config = (String) options.valueOf("c");
 
+    String reportUrlsFilePath = (String) options.valueOf("report-urls-file");
+    final File reportUrlsFile;
+    if (reportUrlsFilePath != null) {
+      reportUrlsFile = new File(reportUrlsFilePath);
+    } else {
+      reportUrlsFile = null;
+    }
+
     for (String file : new String[] {appApk, testApk}) {
       if (!FileUtils.doFileExist(file)) {
         throw new FileNotFoundException("File not found: " + file);
@@ -92,7 +101,7 @@ public class Flank {
     Optional<File> fetchedBucketDir = gsutilTool.fetchBucket();
     fetchedBucketDir
         .filter(file -> configurator.isAggregateReportsEnabled())
-        .ifPresent(this::aggregateTestReports);
+        .ifPresent(file -> aggregateTestReports(file, reportUrlsFile));
 
     uploadTestTimeFile(gsutilTool, configurator.getShardDuration());
 
@@ -105,9 +114,10 @@ public class Flank {
     XMLUtils.updateXMLFilesWithDeviceName(gsutilTool.fetchResults());
   }
 
-  private void aggregateTestReports(File dir) {
+  private void aggregateTestReports(File resultsDir, File reportUrlsFile) {
     try {
-      new ReportsAggregator(configurator, gsutilTool).aggregate(dir.toPath());
+      new ReportsAggregator(configurator, gsutilTool)
+          .aggregate(resultsDir.toPath(), reportUrlsFile);
     } catch (XmlReportGenerationException
         | HtmlReportGenerationException
         | IOException
@@ -164,6 +174,11 @@ public class Flank {
                 .withRequiredArg()
                 .ofType(String.class)
                 .describedAs("option1; option2; …");
+
+            accepts("report-urls-file", RESULT_URLS_FILE_DESCRIPTION)
+                .withOptionalArg()
+                .ofType(String.class)
+                .describedAs("result-urls.json");
           }
         };
 

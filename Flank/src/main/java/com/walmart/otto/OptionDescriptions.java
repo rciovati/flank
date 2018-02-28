@@ -19,4 +19,7 @@ public class OptionDescriptions {
               + "To invert the above operators, add the 'not' prefix. For example, 'notPackage' executes all the tests except the ones in the given package.%n"
               + "To specify multiple conditions, separate them with a semicolon.%n"
               + "Tests annotated with an annotation containing the 'Ignore' string are skipped by default.");
+
+  public static final String RESULT_URLS_FILE_DESCRIPTION =
+      "Path to the file which will contains the urls to the uploaded test reports";
 }

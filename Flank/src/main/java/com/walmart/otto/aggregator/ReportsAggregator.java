@@ -9,8 +9,10 @@ import com.walmart.otto.shards.TestSuites;
 import com.walmart.otto.tools.GsutilTool;
 import com.walmart.otto.utils.FileUtils;
 import com.walmart.otto.utils.JUnitReportParser;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,7 +31,7 @@ public class ReportsAggregator {
     this.htmlReport = new HtmlReport(configurator);
   }
 
-  public void aggregate(Path reportsBaseDir)
+  public void aggregate(Path reportsBaseDir, File reportUrlsFile)
       throws XmlReportGenerationException, HtmlReportGenerationException, IOException,
           InterruptedException {
     String baseUrl = generateCloudStorageReportsBaseUrl(reportsBaseDir);
@@ -40,6 +42,9 @@ public class ReportsAggregator {
 
     Map<String, List<TestSuite>> map =
         testSuites.stream().collect(groupingBy(TestSuite::getMatrixName));
+
+    List<String> htmlReportUrls = new ArrayList<>();
+    List<String> xmlReportUrls = new ArrayList<>();
 
     for (Entry<String, List<TestSuite>> entry : map.entrySet()) {
 
@@ -54,8 +59,10 @@ public class ReportsAggregator {
         JunitReportWriter.generate(xmlOutputFile, summaryTestSuite);
         gsutilTool.uploadAggregatedXmlFiles(reportsBaseDir.toFile());
 
-        System.out.println(
-            "XML report uploaded to: " + baseUrl + "/" + FileUtils.getFileName(xmlOutputFile));
+        String xmlReportUrl = baseUrl + "/" + FileUtils.getFileName(xmlOutputFile);
+        xmlReportUrls.add(xmlReportUrl);
+
+        System.out.println("XML report uploaded to: " + xmlReportUrl);
       }
 
       if (configurator.isGenerateAggregatedHtmlReport()) {
@@ -70,9 +77,18 @@ public class ReportsAggregator {
         htmlReport.generate(baseUrl, htmlOutputFile, summaryTestSuite);
         gsutilTool.uploadAggregatedHtmlReports(reportsBaseDir.toFile());
 
-        System.out.println(
-            "HTML report uploaded to: " + baseUrl + "/" + FileUtils.getFileName(htmlOutputFile));
+        String htmlReportUrl = baseUrl + "/" + FileUtils.getFileName(htmlOutputFile);
+        htmlReportUrls.add(htmlReportUrl);
+
+        System.out.println("HTML report uploaded to: " + htmlReportUrl);
       }
+    }
+
+    if (reportUrlsFile != null) {
+      ReportUrlsFileWriter.write(reportUrlsFile.toPath(), htmlReportUrls, xmlReportUrls);
+      System.out.println("Written report urls to file: " + reportUrlsFile.getAbsolutePath());
+    } else {
+      System.out.println("Skipping writing the result urls to file.");
     }
   }
 
