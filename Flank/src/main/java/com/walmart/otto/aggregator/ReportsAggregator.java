@@ -53,6 +53,11 @@ public class ReportsAggregator {
 
       TestSuite summaryTestSuite = TestSuites.createSummary(matrixName, suites);
 
+      if (summaryTestSuite.getTestsCount() == 0) {
+        throw new IllegalStateException(
+            "No tests have been run for matrix " + matrixName + ". Nothing to aggregate");
+      }
+
       if (configurator.isGenerateAggregatedXmlReport()) {
         Path xmlOutputFile = reportsBaseDir.resolve(matrixName + "_results.xml");
 

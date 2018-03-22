@@ -39,4 +39,8 @@ public class Fixtures {
         10,
         Collections.singletonList(TestCase.success("1-retry0", "testName", "ClassName")));
   }
+
+  public static TestSuite testSuiteWithZeroTestsRun() {
+    return new TestSuite("matrixName", 0, 0, 0, 0, 11, Collections.emptyList());
+  }
 }

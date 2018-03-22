@@ -13,6 +13,14 @@ import java.util.Optional;
 public class TestSuites {
 
   public static boolean isGloballySuccessful(List<TestSuite> testSuites) {
+
+    boolean hasEmptyTestSuites =
+        testSuites.stream().anyMatch(testSuite -> testSuite.getTestsCount() == 0);
+
+    if (hasEmptyTestSuites) {
+      return false;
+    }
+
     // Aggregate tests by id (generated using test class and testname)
     // The list of TestCases contains multiple elements only if the same test have been retried
     Map<String, List<TestCase>> testCasesMap =

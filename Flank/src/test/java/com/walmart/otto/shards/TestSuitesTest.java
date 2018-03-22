@@ -59,4 +59,14 @@ public class TestSuitesTest {
     assertThat(summary.getFailuresCount(), is(1));
     assertThat(summary.getDurantion(), is(20f));
   }
+
+  @Test
+  public void shouldFailWhenATestSuiteRunNoTests() {
+    TestSuite firstSuite = Fixtures.testSuiteWithZeroTestsRun();
+    TestSuite secondSuite = Fixtures.testSuiteWithSuccess();
+
+    List<TestSuite> testSuites = Arrays.asList(firstSuite, secondSuite);
+
+    assertThat(isGloballySuccessful(testSuites), is(false));
+  }
 }
