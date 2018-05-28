@@ -87,6 +87,10 @@ public class ReportsAggregator {
 
         System.out.println("HTML report uploaded to: " + htmlReportUrl);
       }
+
+      List<TestCase> failingTestCase = TestSuites.readFailures(suites);
+      Path failuresFile = reportsBaseDir.resolve(matrixName + "_failures.json");
+      FailuresFileWriter.write(failuresFile, failingTestCase);
     }
 
     if (reportUrlsFile != null) {

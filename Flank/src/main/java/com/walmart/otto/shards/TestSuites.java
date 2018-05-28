@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class TestSuites {
 
@@ -31,6 +32,14 @@ public class TestSuites {
 
     // If all the buckets have at least one success it means all the tests have passed
     return testCasesMap.values().stream().allMatch(TestSuites::isSuccess);
+  }
+
+  public static List<TestCase> readFailures(List<TestSuite> suites) {
+    return suites
+        .stream()
+        .flatMap(testSuite -> testSuite.getTestCaseList().stream())
+        .filter(TestCase::isFailure)
+        .collect(Collectors.toList());
   }
 
   private static boolean isSuccess(List<TestCase> testCases) {

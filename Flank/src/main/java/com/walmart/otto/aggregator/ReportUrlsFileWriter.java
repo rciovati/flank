@@ -1,19 +1,22 @@
 package com.walmart.otto.aggregator;
 
+import com.squareup.moshi.Moshi;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class ReportUrlsFileWriter {
+class ReportUrlsFileWriter {
 
   public static void write(Path filePath, List<String> htmlReports, List<String> xmlReports) {
+
     String json =
-        String.format(
-            "{\"htmlReports\": %s, \"xmlReports\": %s}",
-            toJsonArray(htmlReports), toJsonArray(xmlReports));
+        new Moshi.Builder()
+            .build()
+            .adapter(Report.class)
+            .toJson(new Report(htmlReports, xmlReports));
+
     try {
       Files.write(filePath, json.getBytes(Charset.defaultCharset()));
     } catch (IOException e) {
@@ -21,10 +24,14 @@ public class ReportUrlsFileWriter {
     }
   }
 
-  private static String toJsonArray(List<String> strings) {
-    return strings
-        .stream()
-        .map(s -> String.format("\"%s\"", s))
-        .collect(Collectors.joining(",", "[", "]"));
+  private static class Report {
+
+    public final List<String> html_reports;
+    public final List<String> xml_reports;
+
+    private Report(List<String> html_reports, List<String> xml_reports) {
+      this.html_reports = html_reports;
+      this.xml_reports = xml_reports;
+    }
   }
 }
